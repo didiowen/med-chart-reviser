@@ -154,6 +154,12 @@
     </button>
     <div class="settings-body" id="settings-body">
       <div class="field-row">
+        <span class="field-label">Access token</span>
+        <input type="password" id="access-token" placeholder="Enter access token" autocomplete="current-password" style="flex:1;border:none;outline:none;background:transparent;font-size:13px;color:#1a1a18;font-family:inherit;" />
+        <button onclick="toggleToken()" id="token-toggle" style="padding:4px 10px;font-size:12px;">Show</button>
+      </div>
+      <p class="inline-err" id="token-err" style="display:none">Access token is required.</p>
+      <div class="field-row">
         <span class="field-label">Model</span>
         <select id="model">
           <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Meta · recommended)</option>
@@ -212,7 +218,15 @@ let currentOutput = '';
 let showDiff = false;
 let settingsOpen = true;
 
-function toggleSettings() {
+function toggleToken() {
+  const input = document.getElementById('access-token');
+  const btn = document.getElementById('token-toggle');
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  btn.textContent = show ? 'Hide' : 'Show';
+}
+
+
   settingsOpen = !settingsOpen;
   document.getElementById('settings-body').style.display = settingsOpen ? 'flex' : 'none';
   document.getElementById('settings-toggle').classList.toggle('open', settingsOpen);
@@ -294,7 +308,11 @@ function escHtml(s) {
 
 async function revise() {
   const input = document.getElementById('input').value.trim();
-  if (!input) {
+  const accessToken = document.getElementById('access-token').value.trim();
+  const tokenErr = !accessToken;
+  const inputErr = !input;
+  document.getElementById('token-err').style.display = tokenErr ? 'block' : 'none';
+  if (tokenErr || inputErr) {
     document.getElementById('input-panel').classList.add('error-border');
     document.getElementById('input-err').style.display = 'block';
     const c = document.getElementById('counter');
@@ -307,7 +325,7 @@ async function revise() {
     const res = await fetch('/api/revise', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: document.getElementById('model').value, summary: input })
+      body: JSON.stringify({ model: document.getElementById('model').value, summary: input, accessToken })
     });
     const data = await res.json();
     if (data.error) { showError(data.error); setLoading(false); return; }

@@ -192,6 +192,17 @@
     <label for="apikey">OpenRouter API key</label>
     <input type="password" id="apikey" placeholder="sk-or-..." autocomplete="off" />
   </div>
+  <div class="api-key-row">
+    <label for="model">Model</label>
+    <select id="model" style="flex:1; border:none; outline:none; background:transparent; font-size:13px; color:var(--color-text-primary, #1a1a18); font-family:inherit; cursor:pointer;">
+      <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Meta · free)</option>
+      <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (Meta · free)</option>
+      <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (Mistral · free)</option>
+      <option value="google/gemma-3-12b-it:free">Gemma 3 12B (Google · free)</option>
+      <option value="google/gemma-3-27b-it:free">Gemma 3 27B (Google · free)</option>
+      <option value="mistralai/mistral-small-3.1-24b-instruct:free">Mistral Small 3.1 24B (Mistral · free)</option>
+    </select>
+  </div>
 
   <div class="panels split" id="panels">
     <div class="panel" id="input-panel">
@@ -284,7 +295,7 @@ async function revise() {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.3-70b-instruct:free',
+        model: document.getElementById('model').value,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: `Please revise the following medical summary:\n\n${input}` }

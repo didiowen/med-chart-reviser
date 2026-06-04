@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Medical Summary Revision Tool</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f5f3;
+      color: #1a1a18;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .header-text h1 { font-size: 18px; font-weight: 500; color: #1a1a18; }
+    .header-text p { font-size: 13px; color: #666; margin-top: 4px; }
+
+    .api-key-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 0.5px solid #ddd;
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+    .api-key-row label { font-size: 12px; color: #888; white-space: nowrap; font-weight: 500; }
+    .api-key-row input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 13px;
+      background: transparent;
+      color: #1a1a18;
+      font-family: monospace;
+      min-width: 0;
+    }
+
+    .tabs { display: flex; gap: 6px; }
+    .tab {
+      padding: 5px 14px;
+      font-size: 12px;
+      border-radius: 8px;
+      border: 0.5px solid #ddd;
+      background: transparent;
+      color: #888;
+      cursor: pointer;
+      font-weight: 400;
+    }
+    .tab.active { background: #ebebea; color: #1a1a18; font-weight: 500; }
+
+    .panels { display: flex; gap: 12px; }
+    .panels.split { flex-direction: row; flex-wrap: wrap; }
+    .panels.single { flex-direction: column; }
+
+    .panel {
+      background: #fff;
+      border: 0.5px solid #ddd;
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .panel-label { font-size: 12px; color: #888; font-weight: 500; letter-spacing: 0.02em; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; }
+
+    textarea {
+      flex: 1;
+      min-height: 280px;
+      resize: vertical;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #1a1a18;
+      font-family: inherit;
+    }
+
+    .output-text {
+      font-size: 14px;
+      line-height: 1.8;
+      color: #1a1a18;
+      white-space: pre-wrap;
+    }
+
+    .btn-row { display: flex; gap: 8px; justify-content: flex-end; }
+
+    button {
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 0.5px solid #ccc;
+      background: transparent;
+      color: #1a1a18;
+      font-family: inherit;
+    }
+    button:hover { background: #f0f0ef; }
+    button.primary {
+      background: #1a1a18;
+      color: #fff;
+      border: none;
+      font-weight: 500;
+    }
+    button.primary:hover { background: #333; }
+    button.primary:disabled { opacity: 0.5; cursor: not-allowed; background: #1a1a18; }
+
+    .loading-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      background: #fff;
+      border: 0.5px solid #ddd;
+      border-radius: 12px;
+      flex: 1;
+    }
+    .loading-panel p { font-size: 14px; color: #888; }
+
+    .error { font-size: 13px; color: #b00; }
+
+    .notice {
+      font-size: 12px;
+      color: #999;
+      background: #fafaf9;
+      border: 0.5px solid #e5e5e3;
+      border-radius: 8px;
+      padding: 10px 14px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+      .panels.split { flex-direction: column; }
+      .panel { min-width: unset; }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body { background: #1a1a18; color: #f0f0ee; }
+      .header-text h1 { color: #f0f0ee; }
+      .header-text p { color: #aaa; }
+      .api-key-row { background: #2a2a28; border-color: #444; }
+      .api-key-row input { color: #f0f0ee; }
+      .tab { border-color: #444; color: #888; }
+      .tab.active { background: #2e2e2c; color: #f0f0ee; }
+      .panel { background: #2a2a28; border-color: #444; }
+      .panel-label { color: #aaa; }
+      textarea { color: #f0f0ee; }
+      .output-text { color: #f0f0ee; }
+      button { border-color: #555; color: #f0f0ee; }
+      button:hover { background: #333; }
+      button.primary { background: #f0f0ee; color: #1a1a18; }
+      button.primary:hover { background: #ddd; }
+      button.primary:disabled { background: #f0f0ee; }
+      .loading-panel { background: #2a2a28; border-color: #444; }
+      .notice { background: #222; border-color: #444; color: #888; }
+      .error { color: #f88; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-text">
+      <h1>Medical summary revision</h1>
+      <p>Paste a draft below. Claude will revise it for clarity and grammar while preserving all clinical content.</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active" id="tab-split" onclick="setView('split')">Side by side</button>
+      <button class="tab" id="tab-single" onclick="setView('single')">Output only</button>
+    </div>
+  </div>
+
+  <div class="api-key-row">
+    <label for="apikey">Google AI Studio API key</label>
+    <input type="password" id="apikey" placeholder="AIza..." autocomplete="off" />
+  </div>
+
+  <div class="panels split" id="panels">
+    <div class="panel" id="input-panel">
+      <p class="panel-label">Draft summary</p>
+      <textarea id="input" placeholder="Paste your draft medical summary here..."></textarea>
+      <div class="btn-row">
+        <button id="clear-btn" onclick="clearAll()" style="display:none">Clear</button>
+        <button class="primary" id="revise-btn" onclick="revise()">Revise</button>
+      </div>
+    </div>
+
+    <div class="panel" id="output-panel" style="display:none">
+      <div class="panel-header">
+        <p class="panel-label">Revised summary</p>
+        <div style="display:flex;gap:6px">
+          <button id="edit-btn" onclick="setView('split')" style="display:none">Edit draft</button>
+          <button id="copy-btn" onclick="copyOutput()">Copy</button>
+        </div>
+      </div>
+      <p class="output-text" id="output"></p>
+    </div>
+
+    <div class="loading-panel" id="loading-panel" style="display:none">
+      <p>Revising your summary...</p>
+    </div>
+  </div>
+
+  <p class="error" id="error" style="display:none"></p>
+
+  <p class="notice">
+    Your API key is used only in your browser to call the Google Gemini API directly and is never sent anywhere else.
+    De-identify patient data before use. This tool does not store any input or output.
+  </p>
+
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are a medical editor. Your task is to revise medical summaries to improve clarity, readability, and grammatical accuracy while strictly preserving the original structure and content.
+
+Rules you must follow:
+- Do not add any new clinical information or change the meaning of any statement.
+- Do not use bullet points, numbered lists, subtitles, bold, or italics anywhere in the output.
+- Write in continuous, fluid prose — a single coherent narrative or fluid multi-paragraph format.
+- Vital signs must be written exactly as: "The body temperature was __°C, the heart rate __ beats per minute, the blood pressure __/__ mm Hg, the respiratory rate __ breaths per minute, and the oxygen saturation __% while the patient was breathing __ (ambient air or oxygen device)."
+- When introducing vital signs, use contextual phrases such as "at triage" or "upon visiting the emergency department (ED)" to ensure natural placement in the narrative.
+- The revision is purely editorial — refine language, phrasing, and grammar only. Keep all medical content unchanged and clinically accurate.
+- Do not use additional formatting such as italics or bold types.
+- Use American English spelling and conventions throughout.`;
+
+let currentView = 'split';
+let currentOutput = '';
+
+function setView(v) {
+  currentView = v;
+  document.getElementById('tab-split').classList.toggle('active', v === 'split');
+  document.getElementById('tab-single').classList.toggle('active', v === 'single');
+  const panels = document.getElementById('panels');
+  panels.className = 'panels ' + v;
+  if (currentOutput) {
+    document.getElementById('input-panel').style.display = v === 'split' ? 'flex' : 'none';
+    document.getElementById('output-panel').style.display = 'flex';
+    document.getElementById('edit-btn').style.display = v === 'single' ? '' : 'none';
+  }
+}
+
+function clearAll() {
+  document.getElementById('input').value = '';
+  document.getElementById('output').textContent = '';
+  document.getElementById('output-panel').style.display = 'none';
+  document.getElementById('input-panel').style.display = 'flex';
+  document.getElementById('clear-btn').style.display = 'none';
+  document.getElementById('error').style.display = 'none';
+  currentOutput = '';
+}
+
+async function revise() {
+  const apiKey = document.getElementById('apikey').value.trim();
+  const input = document.getElementById('input').value.trim();
+  if (!apiKey) { showError('Please enter your Anthropic API key.'); return; }
+  if (!input) return;
+
+  setLoading(true);
+  document.getElementById('error').style.display = 'none';
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: `Please revise the following medical summary:\n\n${input}` }] }],
+        generationConfig: { maxOutputTokens: 1000 }
+      })
+    });
+    const data = await res.json();
+    if (data.error) { showError(data.error.message || 'API error.'); setLoading(false); return; }
+    currentOutput = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+    document.getElementById('output').textContent = currentOutput;
+    document.getElementById('output-panel').style.display = 'flex';
+    document.getElementById('clear-btn').style.display = '';
+    if (currentView === 'single') {
+      document.getElementById('input-panel').style.display = 'none';
+      document.getElementById('edit-btn').style.display = '';
+    }
+  } catch (e) {
+    showError('Something went wrong. Check your API key and try again.');
+  }
+  setLoading(false);
+}
+
+function setLoading(on) {
+  document.getElementById('loading-panel').style.display = on ? 'flex' : 'none';
+  if (on) document.getElementById('output-panel').style.display = 'none';
+  document.getElementById('revise-btn').disabled = on;
+  document.getElementById('revise-btn').textContent = on ? 'Revising...' : 'Revise';
+}
+
+function copyOutput() {
+  navigator.clipboard.writeText(currentOutput);
+  const btn = document.getElementById('copy-btn');
+  btn.textContent = 'Copied';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+
+function showError(msg) {
+  const el = document.getElementById('error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+document.getElementById('input').addEventListener('input', () => {
+  document.getElementById('clear-btn').style.display = document.getElementById('input').value ? '' : 'none';
+});
+</script>
+</body>
+</html>

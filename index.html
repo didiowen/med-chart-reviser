@@ -1,245 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Medical Summary Revision Tool</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+import { useState, useRef } from "react";
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f5f5f3;
-      color: #1a1a18;
-      min-height: 100vh;
-      padding: 2rem 1rem;
-    }
-
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    .header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-    .header-text h1 { font-size: 18px; font-weight: 500; color: #1a1a18; }
-    .header-text p { font-size: 13px; color: #666; margin-top: 4px; }
-
-    .api-key-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #fff;
-      border: 0.5px solid #ddd;
-      border-radius: 10px;
-      padding: 10px 14px;
-    }
-    .api-key-row label { font-size: 12px; color: #888; white-space: nowrap; font-weight: 500; }
-    .api-key-row input {
-      flex: 1;
-      border: none;
-      outline: none;
-      font-size: 13px;
-      background: transparent;
-      color: #1a1a18;
-      font-family: monospace;
-      min-width: 0;
-    }
-
-    .tabs { display: flex; gap: 6px; }
-    .tab {
-      padding: 5px 14px;
-      font-size: 12px;
-      border-radius: 8px;
-      border: 0.5px solid #ddd;
-      background: transparent;
-      color: #888;
-      cursor: pointer;
-      font-weight: 400;
-    }
-    .tab.active { background: #ebebea; color: #1a1a18; font-weight: 500; }
-
-    .panels { display: flex; gap: 12px; }
-    .panels.split { flex-direction: row; flex-wrap: wrap; }
-    .panels.single { flex-direction: column; }
-
-    .panel {
-      background: #fff;
-      border: 0.5px solid #ddd;
-      border-radius: 12px;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      flex: 1;
-      min-width: 280px;
-    }
-
-    .panel-label { font-size: 12px; color: #888; font-weight: 500; letter-spacing: 0.02em; }
-    .panel-header { display: flex; align-items: center; justify-content: space-between; }
-
-    textarea {
-      flex: 1;
-      min-height: 280px;
-      resize: vertical;
-      border: none;
-      outline: none;
-      background: transparent;
-      font-size: 14px;
-      line-height: 1.7;
-      color: #1a1a18;
-      font-family: inherit;
-    }
-
-    .output-text {
-      font-size: 14px;
-      line-height: 1.8;
-      color: #1a1a18;
-      white-space: pre-wrap;
-    }
-
-    .btn-row { display: flex; gap: 8px; justify-content: flex-end; }
-
-    button {
-      padding: 7px 16px;
-      border-radius: 8px;
-      font-size: 13px;
-      cursor: pointer;
-      border: 0.5px solid #ccc;
-      background: transparent;
-      color: #1a1a18;
-      font-family: inherit;
-    }
-    button:hover { background: #f0f0ef; }
-    button.primary {
-      background: #1a1a18;
-      color: #fff;
-      border: none;
-      font-weight: 500;
-    }
-    button.primary:hover { background: #333; }
-    button.primary:disabled { opacity: 0.5; cursor: not-allowed; background: #1a1a18; }
-
-    .loading-panel {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 200px;
-      background: #fff;
-      border: 0.5px solid #ddd;
-      border-radius: 12px;
-      flex: 1;
-    }
-    .loading-panel p { font-size: 14px; color: #888; }
-
-    .error { font-size: 13px; color: #b00; }
-
-    .notice {
-      font-size: 12px;
-      color: #999;
-      background: #fafaf9;
-      border: 0.5px solid #e5e5e3;
-      border-radius: 8px;
-      padding: 10px 14px;
-      line-height: 1.6;
-    }
-
-    @media (max-width: 640px) {
-      .panels.split { flex-direction: column; }
-      .panel { min-width: unset; }
-    }
-
-    @media (prefers-color-scheme: dark) {
-      body { background: #1a1a18; color: #f0f0ee; }
-      .header-text h1 { color: #f0f0ee; }
-      .header-text p { color: #aaa; }
-      .api-key-row { background: #2a2a28; border-color: #444; }
-      .api-key-row input { color: #f0f0ee; }
-      .tab { border-color: #444; color: #888; }
-      .tab.active { background: #2e2e2c; color: #f0f0ee; }
-      .panel { background: #2a2a28; border-color: #444; }
-      .panel-label { color: #aaa; }
-      textarea { color: #f0f0ee; }
-      .output-text { color: #f0f0ee; }
-      button { border-color: #555; color: #f0f0ee; }
-      button:hover { background: #333; }
-      button.primary { background: #f0f0ee; color: #1a1a18; }
-      button.primary:hover { background: #ddd; }
-      button.primary:disabled { background: #f0f0ee; }
-      .loading-panel { background: #2a2a28; border-color: #444; }
-      .notice { background: #222; border-color: #444; color: #888; }
-      .error { color: #f88; }
-    }
-  </style>
-</head>
-<body>
-<div class="container">
-
-  <div class="header">
-    <div class="header-text">
-      <h1>Medical summary revision</h1>
-      <p>Paste a draft below. Claude will revise it for clarity and grammar while preserving all clinical content.</p>
-    </div>
-    <div class="tabs">
-      <button class="tab active" id="tab-split" onclick="setView('split')">Side by side</button>
-      <button class="tab" id="tab-single" onclick="setView('single')">Output only</button>
-    </div>
-  </div>
-
-  <div class="api-key-row">
-    <label for="apikey">OpenRouter API key</label>
-    <input type="password" id="apikey" placeholder="sk-or-..." autocomplete="off" />
-  </div>
-  <div class="api-key-row">
-    <label for="model">Model</label>
-    <select id="model" style="flex:1; border:none; outline:none; background:transparent; font-size:13px; color:var(--color-text-primary, #1a1a18); font-family:inherit; cursor:pointer;">
-      <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Meta · free)</option>
-      <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (Meta · free)</option>
-      <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (Mistral · free)</option>
-      <option value="google/gemma-3-12b-it:free">Gemma 3 12B (Google · free)</option>
-      <option value="google/gemma-3-27b-it:free">Gemma 3 27B (Google · free)</option>
-      <option value="mistralai/mistral-small-3.1-24b-instruct:free">Mistral Small 3.1 24B (Mistral · free)</option>
-    </select>
-  </div>
-
-  <div class="panels split" id="panels">
-    <div class="panel" id="input-panel">
-      <p class="panel-label">Draft summary</p>
-      <textarea id="input" placeholder="Paste your draft medical summary here..."></textarea>
-      <div class="btn-row">
-        <button id="clear-btn" onclick="clearAll()" style="display:none">Clear</button>
-        <button class="primary" id="revise-btn" onclick="revise()">Revise</button>
-      </div>
-    </div>
-
-    <div class="panel" id="output-panel" style="display:none">
-      <div class="panel-header">
-        <p class="panel-label">Revised summary</p>
-        <div style="display:flex;gap:6px">
-          <button id="edit-btn" onclick="setView('split')" style="display:none">Edit draft</button>
-          <button id="copy-btn" onclick="copyOutput()">Copy</button>
-        </div>
-      </div>
-      <p class="output-text" id="output"></p>
-    </div>
-
-    <div class="loading-panel" id="loading-panel" style="display:none">
-      <p>Revising your summary...</p>
-    </div>
-  </div>
-
-  <p class="error" id="error" style="display:none"></p>
-
-  <p class="notice">
-    Your API key is used only in your browser to call the OpenRouter API directly and is never sent anywhere else.
-    De-identify patient data before use. This tool does not store any input or output.
-  </p>
-
-</div>
-
-<script>
 const SYSTEM_PROMPT = `You are a medical editor. Your task is to revise medical summaries to improve clarity, readability, and grammatical accuracy while strictly preserving the original structure and content.
 
 Rules you must follow:
@@ -252,96 +12,221 @@ Rules you must follow:
 - Do not use additional formatting such as italics or bold types.
 - Use American English spelling and conventions throughout.`;
 
-let currentView = 'split';
-let currentOutput = '';
+const MODELS = [
+  { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B (Meta · recommended)" },
+  { id: "llama-3.1-8b-instant",    label: "Llama 3.1 8B (Meta · fast)" },
+  { id: "mixtral-8x7b-32768",      label: "Mixtral 8x7B (Mistral)" },
+  { id: "gemma2-9b-it",            label: "Gemma 2 9B (Google)" },
+];
 
-function setView(v) {
-  currentView = v;
-  document.getElementById('tab-split').classList.toggle('active', v === 'split');
-  document.getElementById('tab-single').classList.toggle('active', v === 'single');
-  const panels = document.getElementById('panels');
-  panels.className = 'panels ' + v;
-  if (currentOutput) {
-    document.getElementById('input-panel').style.display = v === 'split' ? 'flex' : 'none';
-    document.getElementById('output-panel').style.display = 'flex';
-    document.getElementById('edit-btn').style.display = v === 'single' ? '' : 'none';
+function computeDiff(a, b) {
+  const wa = a.split(/(\s+)/), wb = b.split(/(\s+)/);
+  const m = wa.length, n = wb.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = m - 1; i >= 0; i--)
+    for (let j = n - 1; j >= 0; j--)
+      dp[i][j] = wa[i] === wb[j] ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+  const res = []; let i = 0, j = 0;
+  while (i < m || j < n) {
+    if (i < m && j < n && wa[i] === wb[j]) { res.push({ type: "same", text: wa[i] }); i++; j++; }
+    else if (j < n && (i >= m || dp[i][j+1] >= (i < m ? dp[i+1][j] : 0))) { res.push({ type: "add", text: wb[j] }); j++; }
+    else { res.push({ type: "remove", text: wa[i] }); i++; }
   }
+  return res;
 }
 
-function clearAll() {
-  document.getElementById('input').value = '';
-  document.getElementById('output').textContent = '';
-  document.getElementById('output-panel').style.display = 'none';
-  document.getElementById('input-panel').style.display = 'flex';
-  document.getElementById('clear-btn').style.display = 'none';
-  document.getElementById('error').style.display = 'none';
-  currentOutput = '';
+function DiffView({ original, revised }) {
+  return (
+    <p style={{ fontSize: "14px", lineHeight: "1.8", margin: 0 }}>
+      {computeDiff(original, revised).map((seg, i) => {
+        if (seg.type === "same") return <span key={i}>{seg.text}</span>;
+        if (seg.type === "add") return <span key={i} style={{ background: "rgba(34,197,94,0.18)", color: "#166534", borderRadius: "3px", padding: "0 1px" }}>{seg.text}</span>;
+        return <span key={i} style={{ background: "rgba(239,68,68,0.15)", color: "#991b1b", textDecoration: "line-through", borderRadius: "3px", padding: "0 1px" }}>{seg.text}</span>;
+      })}
+    </p>
+  );
 }
 
-async function revise() {
-  const apiKey = document.getElementById('apikey').value.trim();
-  const input = document.getElementById('input').value.trim();
-  if (!apiKey) { showError('Please enter your Anthropic API key.'); return; }
-  if (!input) return;
+export default function App() {
+  const [input, setInput]           = useState("");
+  const [output, setOutput]         = useState("");
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState("");
+  const [copied, setCopied]         = useState(false);
+  const [view, setView]             = useState("split");
+  const [showDiff, setShowDiff]     = useState(false);
+  const [apiKey, setApiKey]         = useState("");
+  const [showKey, setShowKey]       = useState(false);
+  const [model, setModel]           = useState(MODELS[0].id);
+  const [settingsOpen, setSettings] = useState(true);
+  const [keyErr, setKeyErr]         = useState(false);
+  const [inputErr, setInputErr]     = useState(false);
 
-  setLoading(true);
-  document.getElementById('error').style.display = 'none';
+  const wordCount = input.trim() ? input.trim().split(/\s+/).length : 0;
+  const charCount = input.length;
 
-  try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: document.getElementById('model').value,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: `Please revise the following medical summary:\n\n${input}` }
-        ],
-        max_tokens: 1000
-      })
-    });
-    const data = await res.json();
-    if (data.error) { showError(data.error.message || 'API error.'); setLoading(false); return; }
-    currentOutput = data.choices?.[0]?.message?.content || '';
-    document.getElementById('output').textContent = currentOutput;
-    document.getElementById('output-panel').style.display = 'flex';
-    document.getElementById('clear-btn').style.display = '';
-    if (currentView === 'single') {
-      document.getElementById('input-panel').style.display = 'none';
-      document.getElementById('edit-btn').style.display = '';
-    }
-  } catch (e) {
-    showError('Something went wrong. Check your API key and try again.');
-  }
-  setLoading(false);
+  const revise = async () => {
+    const kErr = !apiKey.trim();
+    const iErr = !input.trim();
+    setKeyErr(kErr); setInputErr(iErr);
+    if (kErr || iErr) return;
+    setLoading(true); setError(""); setOutput(""); setShowDiff(false);
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1024,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user",   content: `Please revise the following medical summary:\n\n${input}` }
+          ]
+        })
+      });
+      const data = await res.json();
+      if (data.error) { setError(data.error.message || "API error."); setLoading(false); return; }
+      setOutput(data.choices?.[0]?.message?.content || "");
+    } catch { setError("Something went wrong. Check your API key and try again."); }
+    setLoading(false);
+  };
+
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(output); }
+    catch { const el = document.createElement("textarea"); el.value = output; document.body.appendChild(el); el.select(); document.execCommand("copy"); document.body.removeChild(el); }
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  };
+
+  const clear = () => { setInput(""); setOutput(""); setError(""); setShowDiff(false); setKeyErr(false); setInputErr(false); };
+
+  const s = {
+    btn: { padding: "7px 16px", borderRadius: "var(--border-radius-md)", fontSize: "13px", cursor: "pointer", border: "0.5px solid var(--color-border-secondary)", background: "transparent", color: "var(--color-text-primary)" },
+    primary: { padding: "7px 16px", borderRadius: "var(--border-radius-md)", fontSize: "13px", cursor: "pointer", border: "none", background: "var(--color-text-primary)", color: "var(--color-background-primary)", fontWeight: 500 },
+    tab: (a) => ({ padding: "5px 14px", fontSize: "12px", borderRadius: "var(--border-radius-md)", border: "0.5px solid var(--color-border-tertiary)", background: a ? "var(--color-background-secondary)" : "transparent", color: a ? "var(--color-text-primary)" : "var(--color-text-secondary)", cursor: "pointer", fontWeight: a ? 500 : 400 }),
+    panel: { background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", padding: "1rem", display: "flex", flexDirection: "column", gap: "10px", flex: 1 },
+    label: { fontSize: "12px", color: "var(--color-text-secondary)", fontWeight: 500, letterSpacing: "0.02em" },
+    fieldRow: { display: "flex", alignItems: "center", gap: "8px" },
+    fieldLabel: { fontSize: "12px", color: "var(--color-text-secondary)", fontWeight: 500, minWidth: "80px" },
+    input: (err) => ({ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: "13px", color: "var(--color-text-primary)", fontFamily: "var(--font-sans)", borderBottom: err ? "1px solid var(--color-border-danger)" : "none" }),
+  };
+
+  return (
+    <div style={{ padding: "1.5rem 0", display: "flex", flexDirection: "column", gap: "14px" }}>
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+        <div>
+          <p style={{ margin: 0, fontSize: "16px", fontWeight: 500, color: "var(--color-text-primary)" }}>Medical summary revision</p>
+          <p style={{ margin: 0, fontSize: "13px", color: "var(--color-text-secondary)" }}>Paste a draft below. Claude will revise it for clarity and grammar while preserving all clinical content.</p>
+        </div>
+        <div style={{ display: "flex", gap: "6px" }}>
+          <button style={s.tab(view === "split")} onClick={() => setView("split")}>Side by side</button>
+          <button style={s.tab(view === "single")} onClick={() => setView("single")}>Output only</button>
+        </div>
+      </div>
+
+      <div style={{ background: "var(--color-background-primary)", border: `0.5px solid ${keyErr ? "var(--color-border-danger)" : "var(--color-border-tertiary)"}`, borderRadius: "var(--border-radius-lg)", overflow: "hidden" }}>
+        <button
+          onClick={() => setSettings(o => !o)}
+          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "transparent", border: "none", cursor: "pointer", color: "var(--color-text-primary)" }}
+        >
+          <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--color-text-secondary)" }}>API settings</span>
+          <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)", transform: settingsOpen ? "rotate(180deg)" : "none", display: "inline-block", transition: "transform .2s" }}>▾</span>
+        </button>
+
+        {settingsOpen && (
+          <div style={{ borderTop: "0.5px solid var(--color-border-tertiary)", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={s.fieldRow}>
+              <span style={s.fieldLabel}>Groq API key</span>
+              <input
+                type={showKey ? "text" : "password"}
+                value={apiKey}
+                onChange={e => { setApiKey(e.target.value); setKeyErr(false); }}
+                placeholder="gsk_..."
+                style={{ ...s.input(keyErr), flex: 1 }}
+              />
+              <button onClick={() => setShowKey(v => !v)} style={{ ...s.btn, padding: "4px 10px", fontSize: "12px" }}>{showKey ? "Hide" : "Show"}</button>
+            </div>
+            {keyErr && <p style={{ fontSize: "12px", color: "var(--color-text-danger)", margin: "-4px 0 0" }}>API key is required.</p>}
+            <div style={s.fieldRow}>
+              <span style={s.fieldLabel}>Model</span>
+              <select value={model} onChange={e => setModel(e.target.value)} style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: "13px", color: "var(--color-text-primary)", fontFamily: "var(--font-sans)", cursor: "pointer" }}>
+                {MODELS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: "flex", gap: "12px", flexDirection: view === "single" && output ? "column" : "row", flexWrap: view === "split" ? "wrap" : "nowrap" }}>
+        {(view === "split" || !output) && (
+          <div style={{ ...s.panel, border: `0.5px solid ${inputErr ? "var(--color-border-danger)" : "var(--color-border-tertiary)"}` }}>
+            <p style={s.label}>Draft summary</p>
+            <textarea
+              value={input}
+              onChange={e => { setInput(e.target.value); setInputErr(false); }}
+              placeholder="Paste your draft medical summary here..."
+              style={{ flex: 1, minHeight: "240px", resize: "vertical", border: "none", outline: "none", background: "transparent", fontSize: "14px", lineHeight: "1.7", color: "var(--color-text-primary)", fontFamily: "var(--font-sans)" }}
+            />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: "12px", color: inputErr ? "var(--color-text-danger)" : "var(--color-text-tertiary)" }}>
+                {inputErr ? "Please paste a summary first." : input ? `${wordCount} words · ${charCount} chars` : ""}
+              </span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {(input || output) && <button style={s.btn} onClick={clear}>Clear</button>}
+                <button
+                  style={loading || !input.trim() ? { ...s.primary, opacity: 0.5, cursor: "not-allowed" } : s.primary}
+                  onClick={revise} disabled={loading}
+                >
+                  {loading ? "Revising..." : "Revise"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {output && (
+          <div style={s.panel}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "6px" }}>
+              <p style={s.label}>Revised summary</p>
+              <div style={{ display: "flex", gap: "6px" }}>
+                {view === "split" && (
+                  <button style={{ ...s.btn, fontSize: "12px", padding: "4px 12px", background: showDiff ? "var(--color-background-secondary)" : "transparent", fontWeight: showDiff ? 500 : 400 }} onClick={() => setShowDiff(v => !v)}>
+                    {showDiff ? "Hide changes" : "Show changes"}
+                  </button>
+                )}
+                {view === "single" && <button style={s.btn} onClick={() => setView("split")}>Edit draft</button>}
+                <button style={s.btn} onClick={copy}>{copied ? "Copied" : "Copy"}</button>
+              </div>
+            </div>
+            {showDiff && view === "split"
+              ? <DiffView original={input} revised={output} />
+              : <p style={{ margin: 0, fontSize: "14px", lineHeight: "1.8", color: "var(--color-text-primary)", whiteSpace: "pre-wrap" }}>{output}</p>
+            }
+            {showDiff && view === "split" && (
+              <div style={{ display: "flex", gap: "16px" }}>
+                <span style={{ fontSize: "12px", color: "var(--color-text-secondary)", display: "flex", alignItems: "center", gap: "5px" }}>
+                  <span style={{ display: "inline-block", width: "10px", height: "10px", borderRadius: "2px", background: "rgba(34,197,94,0.3)" }}></span>Added
+                </span>
+                <span style={{ fontSize: "12px", color: "var(--color-text-secondary)", display: "flex", alignItems: "center", gap: "5px" }}>
+                  <span style={{ display: "inline-block", width: "10px", height: "10px", borderRadius: "2px", background: "rgba(239,68,68,0.2)" }}></span>Removed
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {loading && !output && (
+          <div style={{ ...s.panel, alignItems: "center", justifyContent: "center", minHeight: "200px" }}>
+            <p style={{ color: "var(--color-text-secondary)", fontSize: "14px" }}>Revising your summary...</p>
+          </div>
+        )}
+      </div>
+
+      {error && <p style={{ fontSize: "13px", color: "var(--color-text-danger)", margin: 0 }}>{error}</p>}
+
+      <p style={{ fontSize: "12px", color: "var(--color-text-tertiary)", background: "var(--color-background-secondary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-md)", padding: "9px 13px", lineHeight: 1.6 }}>
+        Your API key is used only in your browser to call the Groq API directly and is never sent anywhere else. De-identify patient data before use. This tool does not store any input or output.
+      </p>
+    </div>
+  );
 }
-
-function setLoading(on) {
-  document.getElementById('loading-panel').style.display = on ? 'flex' : 'none';
-  if (on) document.getElementById('output-panel').style.display = 'none';
-  document.getElementById('revise-btn').disabled = on;
-  document.getElementById('revise-btn').textContent = on ? 'Revising...' : 'Revise';
-}
-
-function copyOutput() {
-  navigator.clipboard.writeText(currentOutput);
-  const btn = document.getElementById('copy-btn');
-  btn.textContent = 'Copied';
-  setTimeout(() => btn.textContent = 'Copy', 2000);
-}
-
-function showError(msg) {
-  const el = document.getElementById('error');
-  el.textContent = msg;
-  el.style.display = 'block';
-}
-
-document.getElementById('input').addEventListener('input', () => {
-  document.getElementById('clear-btn').style.display = document.getElementById('input').value ? '' : 'none';
-});
-</script>
-</body>
-</html>

@@ -189,8 +189,8 @@
   </div>
 
   <div class="api-key-row">
-    <label for="apikey">Google AI Studio API key</label>
-    <input type="password" id="apikey" placeholder="AIza..." autocomplete="off" />
+    <label for="apikey">OpenRouter API key</label>
+    <input type="password" id="apikey" placeholder="sk-or-..." autocomplete="off" />
   </div>
 
   <div class="panels split" id="panels">
@@ -222,7 +222,7 @@
   <p class="error" id="error" style="display:none"></p>
 
   <p class="notice">
-    Your API key is used only in your browser to call the Google Gemini API directly and is never sent anywhere else.
+    Your API key is used only in your browser to call the OpenRouter API directly and is never sent anywhere else.
     De-identify patient data before use. This tool does not store any input or output.
   </p>
 
@@ -277,18 +277,24 @@ async function revise() {
   document.getElementById('error').style.display = 'none';
 
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: `Please revise the following medical summary:\n\n${input}` }] }],
-        generationConfig: { maxOutputTokens: 1000 }
+        model: 'meta-llama/llama-3.3-70b-instruct:free',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: `Please revise the following medical summary:\n\n${input}` }
+        ],
+        max_tokens: 1000
       })
     });
     const data = await res.json();
     if (data.error) { showError(data.error.message || 'API error.'); setLoading(false); return; }
-    currentOutput = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+    currentOutput = data.choices?.[0]?.message?.content || '';
     document.getElementById('output').textContent = currentOutput;
     document.getElementById('output-panel').style.display = 'flex';
     document.getElementById('clear-btn').style.display = '';

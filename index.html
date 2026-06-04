@@ -226,7 +226,7 @@ function toggleToken() {
   btn.textContent = show ? 'Hide' : 'Show';
 }
 
-
+function toggleSettings() {
   settingsOpen = !settingsOpen;
   document.getElementById('settings-body').style.display = settingsOpen ? 'flex' : 'none';
   document.getElementById('settings-toggle').classList.toggle('open', settingsOpen);

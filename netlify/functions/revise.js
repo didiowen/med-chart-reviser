@@ -1,7 +1,11 @@
 export default async (req, context) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
-  const { model, summary } = await req.json();
+  const { model, summary, accessToken } = await req.json();
+
+  if (!accessToken || accessToken !== Netlify.env.get("ACCESS_TOKEN"))
+    return new Response(JSON.stringify({ error: "Invalid access token." }), { status: 401 });
+
   if (!summary) return new Response(JSON.stringify({ error: "No summary provided." }), { status: 400 });
 
   const SYSTEM_PROMPT = `You are a medical editor. Your task is to revise medical summaries to improve clarity, readability, and grammatical accuracy while strictly preserving the original structure and content.

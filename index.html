@@ -161,12 +161,15 @@
       <p class="inline-err" id="token-err" style="display:none">Access token is required.</p>
       <div class="field-row">
         <span class="field-label">Model</span>
-        <select id="model">
-          <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Meta · recommended)</option>
-          <option value="llama-3.1-8b-instant">Llama 3.1 8B (Meta · fast)</option>
-          <option value="mixtral-8x7b-32768">Mixtral 8x7B (Mistral)</option>
-          <option value="gemma2-9b-it">Gemma 2 9B (Google)</option>
-        </select>
+        <select id="model"><option value="">Loading models…</option></select>
+        <button onclick="loadModels()" style="padding:4px 10px;font-size:12px;">Refresh</button>
+      </div>
+      <div class="field-row">
+        <span class="field-label"></span>
+        <label style="font-size:12px;color:#888;display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="all-providers" onchange="renderModels(document.getElementById('model').value)" />
+          Include all providers
+        </label>
       </div>
     </div>
   </div>
@@ -207,12 +210,58 @@
   <p class="error-msg" id="error" style="display:none"></p>
 
   <p class="notice">
-    Requests are proxied through a secure serverless function. Your API key is stored as an environment variable on Netlify and is never exposed to the browser.
+    Requests are proxied through a secure serverless function. Your API key is stored as an environment variable on Vercel and is never exposed to the browser.
     De-identify patient data before use. This tool does not store any input or output.
   </p>
 
 </div>
 <script>
+const FALLBACK_MODELS = [
+  { id: 'openai/gpt-oss-120b', owned_by: 'OpenAI' },
+  { id: 'openai/gpt-oss-20b',  owned_by: 'OpenAI' },
+  { id: 'groq/compound',       owned_by: 'Groq' },
+  { id: 'groq/compound-mini',  owned_by: 'Groq' }
+];
+const OTHER_PROVIDERS = /qwen|minimax|deepseek|moonshot|kimi|glm|zhipu|ernie|baidu/i;
+const PREFERRED_DEFAULT = 'openai/gpt-oss-120b';
+let allModels = [];
+
+async function loadModels() {
+  const sel = document.getElementById('model');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">Loading models…</option>';
+  try {
+    const res = await fetch('/api/revise');
+    const data = await res.json();
+    allModels = (data.models && data.models.length) ? data.models : FALLBACK_MODELS;
+  } catch {
+    allModels = FALLBACK_MODELS;
+  }
+  renderModels(prev);
+}
+
+function renderModels(preferred) {
+  const sel = document.getElementById('model');
+  const showAll = document.getElementById('all-providers').checked;
+  const list = showAll ? allModels : allModels.filter(m => !OTHER_PROVIDERS.test(m.id));
+  sel.innerHTML = '';
+  if (!list.length) {
+    sel.innerHTML = '<option value="">No models available</option>';
+    return;
+  }
+  list.forEach(m => {
+    const o = document.createElement('option');
+    o.value = m.id;
+    o.textContent = m.owned_by ? `${m.id} · ${m.owned_by}` : m.id;
+    sel.appendChild(o);
+  });
+  const keep = preferred && list.some(m => m.id === preferred) ? preferred : null;
+  const fallback = list.some(m => m.id === PREFERRED_DEFAULT) ? PREFERRED_DEFAULT : list[0].id;
+  sel.value = keep || fallback;
+}
+
+loadModels();
+
 let currentView = 'split';
 let currentOutput = '';
 let showDiff = false;
@@ -226,7 +275,7 @@ function toggleToken() {
   btn.textContent = show ? 'Hide' : 'Show';
 }
 
-function toggleSettings() {
+
   settingsOpen = !settingsOpen;
   document.getElementById('settings-body').style.display = settingsOpen ? 'flex' : 'none';
   document.getElementById('settings-toggle').classList.toggle('open', settingsOpen);

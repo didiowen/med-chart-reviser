@@ -50,6 +50,9 @@ The system prompt in the serverless function instructs the model to:
 ├── netlify/
 │   └── functions/
 │       └── revise.js           # Serverless proxy → Groq API (route: /api/revise)
+├── scripts/
+│   └── check-syntax.mjs        # Build-time JS syntax check (run by Netlify)
+├── netlify.toml                # Netlify build & function configuration
 ├── LICENSE
 └── README.md
 ```
@@ -102,7 +105,15 @@ Then open the URL that `netlify dev` prints (typically http://localhost:8888).
 
 ## Deployment
 
-The site deploys to Netlify automatically. Pushing to `main` triggers a production deploy, and pull requests get a deploy preview. No build command is required — Netlify serves `index.html` and bundles the function under `netlify/functions/`.
+The site deploys to Netlify automatically. Pushing to `main` triggers a production deploy, and pull requests get a deploy preview. Netlify serves `index.html` from the repo root and bundles the function under `netlify/functions/` (configured in `netlify.toml`).
+
+### Build-time syntax check
+
+Because the app is a single `index.html` with inline JavaScript, a syntax error anywhere in the `<script>` block silently breaks the *entire* page. To prevent that from ever reaching production, the Netlify build command runs `scripts/check-syntax.mjs`, which `node --check`s the inline script and every serverless function. A parse error fails the build, so the broken page is never published. Run it locally the same way:
+
+```bash
+node scripts/check-syntax.mjs
+```
 
 ## Privacy & safety
 

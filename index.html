@@ -224,7 +224,7 @@ const FALLBACK_MODELS = [
   { id: 'groq/compound-mini',  owned_by: 'Groq' }
 ];
 const OTHER_PROVIDERS = /qwen|minimax|deepseek|moonshot|kimi|glm|zhipu|ernie|baidu/i;
-const PREFERRED_DEFAULT = 'openai/gpt-oss-120b';
+const PREFERRED_DEFAULT = 'openai/gpt-oss-20b';
 let allModels = [];
 
 async function loadModels() {
@@ -292,7 +292,7 @@ function toggleToken() {
   btn.textContent = show ? 'Hide' : 'Show';
 }
 
-
+function toggleSettings() {
   settingsOpen = !settingsOpen;
   document.getElementById('settings-body').style.display = settingsOpen ? 'flex' : 'none';
   document.getElementById('settings-toggle').classList.toggle('open', settingsOpen);

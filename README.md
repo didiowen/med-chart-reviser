@@ -65,12 +65,21 @@ The serverless function reads two environment variables (set them in **Netlify �
 
 ## Available models
 
-Selectable from the **Model settings** panel in the UI:
+The **Model settings** panel loads the current model list live from Groq
+(`GET /api/revise`, which proxies Groq's `/models` endpoint), so the dropdown
+stays up to date automatically as Groq adds or retires models — there is no
+hardcoded list to go stale. Non-chat models (Whisper, TTS, guard, embeddings)
+are filtered out. An **Include all providers** checkbox reveals additional
+model families (Qwen, DeepSeek, Kimi, etc.) beyond the OpenAI/Groq defaults.
 
-- `llama-3.3-70b-versatile` — Llama 3.3 70B (Meta · recommended, default)
-- `llama-3.1-8b-instant` — Llama 3.1 8B (Meta · fast)
-- `mixtral-8x7b-32768` — Mixtral 8x7B (Mistral)
-- `gemma2-9b-it` — Gemma 2 9B (Google)
+- **Default:** `openai/gpt-oss-20b` (fast, low cost) — also the server-side
+  fallback used when a request omits the model.
+- **Higher quality:** `openai/gpt-oss-120b`.
+- If the live list can't be fetched, the UI falls back to a small built-in
+  list of current production models.
+
+> Groq's catalog changes over time. Because the list is fetched live, the app
+> only ever offers models your `GROQ_API_KEY` actually has access to.
 
 ## Local development
 

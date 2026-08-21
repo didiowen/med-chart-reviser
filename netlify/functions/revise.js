@@ -1,4 +1,34 @@
+const DEFAULT_MODEL = "openai/gpt-oss-20b";
+
+// Model IDs that are served but are not text/chat-completion models.
+const NON_CHAT_MODEL = /whisper|tts|guard|embed|playai/i;
+
+const json = (body, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" }
+  });
+
 export default async (req, context) => {
+  // GET /api/revise -> live list of available chat models (no access token required;
+  // this only exposes public model IDs, never the API key or any user data).
+  if (req.method === "GET") {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/models", {
+        headers: { "Authorization": `Bearer ${Netlify.env.get("GROQ_API_KEY")}` }
+      });
+      const data = await res.json();
+      const models = (data.data || [])
+        .filter(m => m.active !== false && !NON_CHAT_MODEL.test(m.id))
+        .map(m => ({ id: m.id, owned_by: m.owned_by }))
+        .sort((a, b) => a.id.localeCompare(b.id));
+      return json({ models });
+    } catch (e) {
+      // Front-end falls back to its built-in list when this is empty.
+      return json({ models: [] });
+    }
+  }
+
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
   const { model, summary, accessToken } = await req.json();
@@ -28,7 +58,7 @@ Rules you must follow:
         "Authorization": `Bearer ${Netlify.env.get("GROQ_API_KEY")}`
       },
       body: JSON.stringify({
-        model: model || "llama-3.3-70b-versatile",
+        model: model || DEFAULT_MODEL,
         max_tokens: 1024,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },

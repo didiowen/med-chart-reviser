@@ -50,6 +50,9 @@ The system prompt in the serverless function instructs the model to:
 ├── netlify/
 │   └── functions/
 │       └── revise.js           # Serverless proxy → Groq API (route: /api/revise)
+├── scripts/
+│   └── check-syntax.mjs        # Build-time JS syntax check (run by Netlify)
+├── netlify.toml                # Netlify build & function configuration
 ├── LICENSE
 └── README.md
 ```
@@ -65,12 +68,21 @@ The serverless function reads two environment variables (set them in **Netlify �
 
 ## Available models
 
-Selectable from the **Model settings** panel in the UI:
+The **Model settings** panel loads the current model list live from Groq
+(`GET /api/revise`, which proxies Groq's `/models` endpoint), so the dropdown
+stays up to date automatically as Groq adds or retires models — there is no
+hardcoded list to go stale. Non-chat models (Whisper, TTS, guard, embeddings)
+are filtered out. An **Include all providers** checkbox reveals additional
+model families (Qwen, DeepSeek, Kimi, etc.) beyond the OpenAI/Groq defaults.
 
-- `llama-3.3-70b-versatile` — Llama 3.3 70B (Meta · recommended, default)
-- `llama-3.1-8b-instant` — Llama 3.1 8B (Meta · fast)
-- `mixtral-8x7b-32768` — Mixtral 8x7B (Mistral)
-- `gemma2-9b-it` — Gemma 2 9B (Google)
+- **Default:** `openai/gpt-oss-20b` (fast, low cost) — also the server-side
+  fallback used when a request omits the model.
+- **Higher quality:** `openai/gpt-oss-120b`.
+- If the live list can't be fetched, the UI falls back to a small built-in
+  list of current production models.
+
+> Groq's catalog changes over time. Because the list is fetched live, the app
+> only ever offers models your `GROQ_API_KEY` actually has access to.
 
 ## Local development
 
@@ -93,7 +105,15 @@ Then open the URL that `netlify dev` prints (typically http://localhost:8888).
 
 ## Deployment
 
-The site deploys to Netlify automatically. Pushing to `main` triggers a production deploy, and pull requests get a deploy preview. No build command is required — Netlify serves `index.html` and bundles the function under `netlify/functions/`.
+The site deploys to Netlify automatically. Pushing to `main` triggers a production deploy, and pull requests get a deploy preview. Netlify serves `index.html` from the repo root and bundles the function under `netlify/functions/` (configured in `netlify.toml`).
+
+### Build-time syntax check
+
+Because the app is a single `index.html` with inline JavaScript, a syntax error anywhere in the `<script>` block silently breaks the *entire* page. To prevent that from ever reaching production, the Netlify build command runs `scripts/check-syntax.mjs`, which `node --check`s the inline script and every serverless function. A parse error fails the build, so the broken page is never published. Run it locally the same way:
+
+```bash
+node scripts/check-syntax.mjs
+```
 
 ## Privacy & safety
 

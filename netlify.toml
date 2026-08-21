@@ -1,0 +1,9 @@
+[build]
+  # Run a JavaScript syntax check before publishing. If the inline script in
+  # index.html or any serverless function fails to parse, the build fails and
+  # the broken page is never deployed.
+  command = "node scripts/check-syntax.mjs"
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"

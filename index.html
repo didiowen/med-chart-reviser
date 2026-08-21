@@ -171,6 +171,7 @@
           Include all providers
         </label>
       </div>
+      <p class="inline-err" id="model-note" style="display:none"></p>
     </div>
   </div>
 
@@ -210,7 +211,7 @@
   <p class="error-msg" id="error" style="display:none"></p>
 
   <p class="notice">
-    Requests are proxied through a secure serverless function. Your API key is stored as an environment variable on Vercel and is never exposed to the browser.
+    Requests are proxied through a secure serverless function. Your API key is stored as an environment variable on Netlify and is never exposed to the browser.
     De-identify patient data before use. This tool does not store any input or output.
   </p>
 
@@ -228,21 +229,37 @@ let allModels = [];
 
 async function loadModels() {
   const sel = document.getElementById('model');
+  if (!sel) return;
   const prev = sel.value;
   sel.innerHTML = '<option value="">Loading models…</option>';
   try {
-    const res = await fetch('/api/revise');
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    const res = await fetch('/api/revise', { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     allModels = (data.models && data.models.length) ? data.models : FALLBACK_MODELS;
-  } catch {
+    setModelNote('');
+  } catch (e) {
     allModels = FALLBACK_MODELS;
+    setModelNote('Could not reach /api/revise (' + e.message + ') — using built-in list.');
   }
-  renderModels(prev);
+  try { renderModels(prev); }
+  catch (e) { setModelNote('Render error: ' + e.message); }
+}
+
+function setModelNote(msg) {
+  const el = document.getElementById('model-note');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
 }
 
 function renderModels(preferred) {
   const sel = document.getElementById('model');
-  const showAll = document.getElementById('all-providers').checked;
+  const cb = document.getElementById('all-providers');
+  const showAll = cb ? cb.checked : false;
   const list = showAll ? allModels : allModels.filter(m => !OTHER_PROVIDERS.test(m.id));
   sel.innerHTML = '';
   if (!list.length) {
@@ -260,7 +277,7 @@ function renderModels(preferred) {
   sel.value = keep || fallback;
 }
 
-loadModels();
+window.addEventListener('DOMContentLoaded', loadModels);
 
 let currentView = 'split';
 let currentOutput = '';
